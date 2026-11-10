@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An easy-to-play trivia library with ten questions per quiz.">
+  <meta name="theme-color" content="#f8f6ef">
+  <title>Trivia Time</title>
+  <style>
+    :root {
+      --background: #f8f6ef;
+      --paper: #fffefb;
+      --ink: #182c3e;
+      --muted: #445868;
+      --teal: #145c50;
+      --line: #d5dedc;
+      --focus: #2155ae;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--background);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    [hidden] { display: none !important; }
+    h1, h2, p { margin: 0; }
+
+    button {
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
+    button:focus:not(:focus-visible) { outline: none; }
+    h1[tabindex="-1"]:focus { outline: none; }
+
+    .shell { width: calc(100% - 48px); max-width: 1120px; margin: 0 auto; }
+    .topbar { background: var(--paper); border-bottom: 1px solid var(--line); }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+      padding: 6px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-right: 10px;
+      border-radius: 12px;
+      background: var(--teal);
+      color: white;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    main.shell { padding: 26px 0 32px; }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      min-height: 214px;
+      padding: 24px clamp(24px, 4vw, 52px);
+      overflow: hidden;
+      border-radius: 26px;
+      background: linear-gradient(110deg, #18344b, #17554e);
+      color: #fffdf6;
+    }
+
+    .eyebrow {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .hero .eyebrow { color: #bbf0d7; }
+
+    .hero h1 {
+      margin: 5px 0 8px;
+      font-size: clamp(36px, 5.6vw, 62px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p:last-child { font-size: clamp(17px, 2.1vw, 22px); line-height: 1.4; }
+    .hero-art { width: clamp(130px, 25vw, 280px); height: auto; margin-left: 12px; }
+    .topic-grid, .round-grid { display: grid; gap: 14px; margin-top: 16px; }
+    .topic-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .round-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .tile {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 108px;
+      padding: 16px;
+      border: 1px solid #b9c7c7;
+      border-radius: 18px;
+      background: var(--tint);
+      text-align: left;
+      box-shadow: 0 2px 0 rgba(24, 44, 62, 0.06);
+    }
+
+    .topic-grid .history { grid-column: span 2; }
+
+    .topic-grid .tile:not(.history) {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px 10px;
+    }
+
+    .topic-grid .tile:not(.history) .tile-icon {
+      grid-column: 1 / -1;
+      width: 36px;
+      height: 36px;
+    }
+    .history { --tint: #fae7bd; --tone: #70421c; }
+    .general { --tint: #e3edff; --tone: #294d86; }
+    .dictionary { --tint: #efe5fb; --tone: #633889; }
+    .entertainment { --tint: #f9e2eb; --tone: #873655; }
+    .food { --tint: #ffe6d6; --tone: #893f26; }
+    .geography { --tint: #ddefef; --tone: #1f5e61; }
+    .science { --tint: #e6efd8; --tone: #3c602a; }
+
+    .tile-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--tone);
+    }
+
+    .tile-icon svg { width: 25px; height: 25px; }
+    .tile-title { display: block; font-size: 20px; font-weight: 800; line-height: 1.2; }
+    .tile-detail { display: block; margin-top: 4px; color: var(--muted); font-size: 16px; line-height: 1.3; }
+    .tile-arrow { color: var(--tone); font-size: 30px; line-height: 1; }
+
+    .round-heading {
+      padding: clamp(24px, 4vw, 44px);
+      border: 1px solid #dfcba3;
+      border-radius: 24px;
+      background: #fae7bd;
+    }
+
+    .round-heading .eyebrow { color: #70421c; }
+
+    .round-heading h1, .result-card h1 {
+      margin: 6px 0 8px;
+      font-size: clamp(30px, 4.4vw, 48px);
+      line-height: 1.12;
+      letter-spacing: -0.025em;
+    }
+
+    .round-heading p:last-child { color: var(--muted); font-size: 19px; }
+    .round-grid .tile { background: var(--paper); min-height: 118px; }
+    .round-grid .tile-icon { background: var(--tint); }
+
+    .quiz-card, .result-card {
+      max-width: 850px;
+      margin: 0 auto;
+      padding: clamp(20px, 4vw, 38px);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: 0 5px 20px rgba(24, 44, 62, 0.06);
+    }
+
+    .quiz-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 16px;
+      flex-wrap: wrap;
+    }
+
+    #quiz-title { color: var(--teal); }
+    .quiz-progress-label { font-size: 17px; font-weight: 750; }
+    .score-pill { padding: 5px 12px; border-radius: 99px; background: #e1f0e8; color: #174b40; }
+
+    .progress {
+      display: block;
+      width: 100%;
+      height: 8px;
+      margin-top: 12px;
+      appearance: none;
+      border: 0;
+      border-radius: 99px;
+      background: #e3ebe6;
+      color: var(--teal);
+      overflow: hidden;
+    }
+
+    .progress::-webkit-progress-bar { background: #e3ebe6; }
+    .progress::-webkit-progress-value { background: var(--teal); border-radius: 99px; }
+    .progress::-moz-progress-bar { background: var(--teal); border-radius: 99px; }
+
+    .question {
+      margin: 24px 0;
+      font-size: clamp(27px, 4vw, 40px);
+      line-height: 1.2;
+      letter-spacing: -0.022em;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .answers { display: grid; gap: 10px; }
+
+    .answer {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 60px;
+      padding: 8px 15px;
+      border: 1px solid #87969c;
+      border-radius: 13px;
+      background: white;
+      font-size: clamp(20px, 2.5vw, 25px);
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
+    .answer-letter {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e8eef4;
+      color: #203b54;
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .answer:disabled { cursor: default; opacity: 1; }
+    .answer[data-result="correct"] { background: #e1f4e8; border-color: #1c6748; color: #144a35; }
+    .answer[data-result="correct"] .answer-letter { background: #1c6748; color: white; }
+    .answer[data-result="incorrect"] { background: #fbe9e2; border-color: #a64c38; color: #792d1d; }
+    .answer[data-result="incorrect"] .answer-letter { background: #a64c38; color: white; }
+    .answer-mark { font-weight: 800; }
+
+    .quiz-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px 18px;
+      min-height: 52px;
+      margin-top: 16px;
+    }
+
+    .feedback { color: var(--muted); font-size: 19px; font-weight: 700; line-height: 1.35; }
+    .feedback[data-result="correct"] { color: #144a35; }
+
+    .primary, .secondary {
+      min-height: 50px;
+      padding: 9px 17px;
+      border: 1px solid var(--teal);
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .primary { background: var(--teal); color: white; }
+    .secondary { background: var(--paper); color: var(--teal); }
+    .result-card { max-width: 650px; padding: clamp(24px, 5vw, 54px); text-align: center; }
+
+    .result-mark {
+      display: grid;
+      place-items: center;
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: #fae7bd;
+      color: #70421c;
+      font-size: 41px;
+      line-height: 1;
+    }
+
+    .result-card .eyebrow { color: var(--teal); }
+    .result-score { color: var(--muted); font-size: clamp(20px, 3vw, 25px); line-height: 1.35; }
+    .result-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+    .noscript-message { padding: 24px 0; font-size: 20px; }
+
+    @media (hover: hover) {
+      .tile:hover { border-color: var(--tone); }
+      .answer:not(:disabled):hover { background: #edf4fc; border-color: #335d86; }
+      .primary:hover { background: #0e493f; }
+      .secondary:hover { background: #e8f2eb; }
+    }
+
+    @media (max-width: 1000px) {
+      .topic-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .topic-grid .history { grid-column: 1 / -1; }
+      .round-grid { grid-template-columns: 1fr; }
+      .round-grid .tile { min-height: 86px; }
+    }
+
+    @media (max-width: 680px) {
+      .topic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: calc(100% - 28px); }
+      .topbar-inner { min-height: 60px; }
+      .brand { font-size: 20px; }
+      .brand-mark { width: 34px; height: 34px; margin-right: 7px; font-size: 23px; }
+      main.shell { padding-top: 16px; }
+      .hero { grid-template-columns: 1fr; min-height: 0; }
+      .hero-art { display: none; }
+      .topic-grid { gap: 10px; }
+      .topic-grid .tile { grid-template-columns: minmax(0, 1fr) auto; min-height: 110px; padding: 12px; }
+      .topic-grid .tile:not(.history) .tile-icon { width: 34px; height: 34px; }
+      .topic-grid .tile:not(.history) .tile-icon svg { width: 21px; height: 21px; }
+      .topic-grid .history { grid-template-columns: auto minmax(0, 1fr) auto; min-height: 80px; }
+      .tile-title { font-size: 18px; }
+      .tile-detail { font-size: 15px; }
+      .quiz-card { padding: 16px; }
+      .quiz-actions { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 400px) {
+      .topbar .secondary { padding-inline: 10px; font-size: 16px; }
+      .topic-grid { grid-template-columns: 1fr; }
+      .topic-grid .tile:not(.history) { grid-template-columns: auto minmax(0, 1fr) auto; min-height: 72px; }
+      .topic-grid .tile:not(.history) .tile-icon { grid-column: auto; }
+    }
+
+    @media (max-height: 720px) and (min-width: 561px) {
+      .topbar-inner { min-height: 58px; }
+      main.shell { padding-top: 14px; padding-bottom: 18px; }
+      .hero { min-height: 146px; padding-top: 12px; padding-bottom: 12px; }
+      .hero-art { width: 184px; }
+      .tile { min-height: 86px; }
+      .topic-grid .tile { padding: 12px 15px; }
+      .quiz-card { padding: 16px 24px; }
+      .question { margin: 15px 0; font-size: clamp(25px, 3.2vw, 32px); }
+      .answers { gap: 7px; }
+      .answer { min-height: 53px; font-size: clamp(20px, 2.4vw, 23px); }
+      .quiz-actions { margin-top: 10px; }
+    }
+
+    @media (max-height: 540px) and (min-width: 561px) {
+      .topbar-inner { min-height: 52px; padding: 4px 0; }
+      .topbar .secondary { min-height: 44px; }
+      main.shell { padding-top: 9px; padding-bottom: 12px; }
+      .hero { min-height: 114px; padding-block: 10px; }
+      .hero h1 { font-size: clamp(32px, 4.5vw, 46px); }
+      .hero-art { width: 140px; }
+      .topic-grid { gap: 9px; margin-top: 10px; }
+      .topic-grid .tile { min-height: 78px; padding: 8px 12px; }
+      .tile-title { font-size: 18px; }
+      .quiz-card { padding: 12px 20px; }
+      .progress { height: 6px; margin-top: 8px; }
+      .question { margin: 10px 0 12px; }
+      .answers { gap: 6px; }
+      .answer { min-height: 48px; padding: 5px 12px; }
+      .quiz-actions { min-height: 50px; margin-top: 8px; }
+    }
+
+    @media (max-height: 540px) and (min-width: 741px) {
+      .topic-grid .tile:not(.history) { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+      .topic-grid .tile:not(.history) .tile-icon { grid-column: auto; width: 32px; height: 32px; }
+      .topic-grid .tile:not(.history) .tile-icon svg { width: 21px; height: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <span class="brand"><span class="brand-mark" aria-hidden="true">?</span>Trivia Time</span>
+      <button class="secondary" id="back-button" type="button" hidden>← All topics</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <noscript><p class="noscript-message">Turn on JavaScript in your browser to play Trivia Time.</p></noscript>
+
+    <section id="topics-screen" aria-labelledby="topics-heading">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">The quiz library</p>
+          <h1 id="topics-heading" tabindex="-1">Pick a topic</h1>
+          <p>Take your time and enjoy a round of trivia.</p>
+        </div>
+        <svg class="hero-art" viewBox="0 0 275 174" aria-hidden="true" focusable="false">
+          <path d="M21 120c42-60 115-80 204-46m-202 73c51 19 127 14 203-29" fill="none" stroke="#88bcab" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round" opacity=".65"/>
+          <circle cx="38" cy="59" r="4" fill="#f7d682"/>
+          <circle cx="238" cy="128" r="4" fill="#b8efdb"/>
+          <path d="M217 22v24m-12-12h24M61 125v24m-12-12h24" stroke="#f7d682" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(-14 117 78)">
+            <rect x="66" y="20" width="103" height="113" rx="19" fill="#0f293b" opacity=".45" transform="translate(0 5)"/>
+            <rect x="66" y="20" width="103" height="113" rx="19" fill="#b8efdb"/>
+            <path d="M104 58a14 14 0 1 1 22 11c-6 4-9 7-9 15m0 13h.1" fill="none" stroke="#194b47" stroke-width="8" stroke-linecap="round"/>
+          </g>
+          <g transform="rotate(13 171 108)">
+            <rect x="130" y="65" width="83" height="91" rx="17" fill="#0f293b" opacity=".35" transform="translate(0 4)"/>
+            <rect x="130" y="65" width="83" height="91" rx="17" fill="#f7d682"/>
+            <path d="m152 111 13 13 25-28" fill="none" stroke="#60451e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+      </div>
+      <div id="topic-grid" class="topic-grid"></div>
+    </section>
+
+    <section id="rounds-screen" aria-labelledby="rounds-heading" hidden>
+      <div class="round-heading">
+        <p class="eyebrow" id="rounds-topic"></p>
+        <h1 id="rounds-heading" tabindex="-1"></h1>
+        <p>Choose a quiz to get started.</p>
+      </div>
+      <div id="round-grid" class="round-grid"></div>
+    </section>
+
+    <section id="quiz-screen" class="quiz-card" aria-labelledby="question-text" hidden>
+      <div class="quiz-meta">
+        <p class="eyebrow" id="quiz-title"></p>
+        <p class="quiz-progress-label" id="question-number"></p>
+        <p class="quiz-progress-label score-pill" id="quiz-score"></p>
+      </div>
+      <progress class="progress" id="quiz-progress" aria-label="Quiz progress"></progress>
+      <h1 class="question" id="question-text" tabindex="-1"></h1>
+      <div class="answers" id="answers" role="group" aria-label="Answer choices"></div>
+      <div class="quiz-actions">
+        <p class="feedback" id="feedback" role="status"></p>
+        <button class="primary" id="next-button" type="button" hidden>Next question</button>
+      </div>
+    </section>
+
+    <section id="result-screen" class="result-card" aria-labelledby="result-heading" hidden>
+      <span class="result-mark" aria-hidden="true">★</span>
+      <p class="eyebrow" id="result-title"></p>
+      <h1 id="result-heading" tabindex="-1">Quiz complete!</h1>
+      <p class="result-score" id="result-score"></p>
+      <div class="result-actions">
+        <button class="primary" id="another-button" type="button">Choose another quiz</button>
+        <button class="secondary" id="replay-button" type="button">Play again</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // EDIT THE QUIZZES HERE. Give each question one correct answer and three alternatives.
+    // The correct answer goes first in the code. The site shuffles all four options for play.
+    function question(prompt, answer, ...alternatives) {
+      return { prompt, answer, choices: [answer, ...alternatives] };
+    }
+
+    const topics = [
+      {
+        id: 'history',
+        title: 'History',
+        description: 'Easy Australian history',
+        quizzes: [
+          {
+            title: 'Australian Landmarks',
+            questions: [
+              question('Which city is home to the opera house with the famous white sails?', 'Sydney', 'Melbourne', 'Perth', 'Brisbane'),
+              question('What type of rock is Uluru mainly made of?', 'Sandstone', 'Granite', 'Limestone', 'Marble'),
+              question('Which Australian bridge is nicknamed the Coathanger?', 'Sydney Harbour Bridge', 'West Gate Bridge', 'Story Bridge', 'Tasman Bridge'),
+              question('Which coastal road in Victoria passes the Twelve Apostles?', 'Great Ocean Road', 'Hume Highway', 'Stuart Highway', 'Pacific Highway'),
+              question('Which Adelaide landmark is famous for hosting cricket matches?', 'Adelaide Oval', 'Adelaide Town Hall', 'Adelaide Central Market', 'Adelaide Botanic Garden'),
+              question('What fruit does the giant roadside landmark in Coffs Harbour look like?', 'Banana', 'Mango', 'Apple', 'Pineapple'),
+              question('What was Port Arthur in Tasmania used as in the 1800s?', 'A convict settlement', 'A gold mine', 'A university', 'A cattle market'),
+              question('Off the coast of which state is the Great Barrier Reef?', 'Queensland', 'Western Australia', 'Tasmania', 'South Australia'),
+              question('Which city is home to the Australian War Memorial?', 'Canberra', 'Sydney', 'Melbourne', 'Brisbane'),
+              question('Which river flows under Princes Bridge in Melbourne?', 'Yarra River', 'Murray River', 'Brisbane River', 'Swan River')
+            ]
+          },
+          {
+            title: 'Australia in the ’50s and ’60s',
+            questions: [
+              // Sources for this round include the National Museum of Australia, the NFSA and Transport Heritage NSW.
+              // https://www.nma.gov.au/defining-moments/resources/tv-and-melbourne-olympics
+              // https://www.nma.gov.au/defining-moments/resources/decimal-currency
+              // https://www.nma.gov.au/defining-moments/resources/snowy-mountains-hydro
+              // https://www.nma.gov.au/defining-moments/resources/indigenous-referendum
+              // https://www.nfsa.gov.au/collection/item/pub-no-beer-slim-dusty
+              // https://www.thnsw.com.au/collection/fleet/southern-aurora
+              // https://sahistoryhub.history.sa.gov.au/milestone/the-beatles-appear-on-the-balcony/
+              // https://archival.collections.slsa.sa.gov.au/brg/BRG213_34_HoldenEH_serieslist.pdf
+              // https://museumsvictoria.com.au/media/3843/play-and-folklore-issue52-nov2009.pdf
+              question('Which Australian city hosted the 1956 Summer Olympics?', 'Melbourne', 'Sydney', 'Perth', 'Adelaide'),
+              question('What replaced pounds and shillings in Australia in 1966?', 'Dollars and cents', 'Euros and cents', 'Francs and centimes', 'Pesos and centavos'),
+              question('When television began broadcasting in Australia in 1956, what were the pictures like?', 'Black and white', 'Full colour', 'Sepia brown', 'Green and white'),
+              question('Which British band drew crowds to Adelaide Town Hall in 1964?', 'The Beatles', 'The Kinks', 'The Who', 'The Rolling Stones'),
+              question('What kind of transport was the Southern Aurora, which began service in 1962?', 'An overnight passenger train', 'A passenger ferry', 'A city tram', 'A domestic airline'),
+              question('Which car brand made the popular EH model in the 1960s?', 'Holden', 'Ford', 'Toyota', 'Volkswagen'),
+              question('What did the Snowy Mountains Scheme use to generate electricity?', 'Flowing water', 'Coal', 'Sunlight', 'Wind'),
+              question('Which song was a hit for Slim Dusty in the late 1950s?', 'A Pub With No Beer', 'I Still Call Australia Home', 'Tie Me Kangaroo Down, Sport', 'The Carnival Is Over'),
+              question('In the 1967 referendum, which document did Australians vote to change?', 'The Australian Constitution', 'The national anthem lyrics', 'The rules of Parliament', 'The national school curriculum'),
+              question('Which toy that you spin around your waist became a craze in the late 1950s?', 'Hula hoop', 'Yo-yo', 'Skipping rope', 'Spinning top')
+            ]
+          },
+          {
+            title: 'Famous Australians',
+            questions: [
+              question('Sir Donald Bradman was famous for playing which sport?', 'Cricket', 'Tennis', 'Rugby league', 'Golf'),
+              question('What sport made Evonne Goolagong Cawley famous?', 'Tennis', 'Swimming', 'Hockey', 'Cycling'),
+              question('What kind of art was Albert Namatjira best known for?', 'Watercolour painting', 'Wood carving', 'Pottery', 'Photography'),
+              question('What kind of singing made Dame Nellie Melba famous?', 'Opera', 'Jazz', 'Folk', 'Country'),
+              question('Nancy-Bird Walton was a pioneer in which field?', 'Aviation', 'Medicine', 'Architecture', 'Journalism'),
+              question('Which race did Cathy Freeman win at the Sydney 2000 Olympics?', '400 metres', '100 metres', '800 metres', 'Marathon'),
+              question('What animal was Steve Irwin especially famous for handling?', 'Crocodiles', 'Penguins', 'Koalas', 'Dolphins'),
+              question('Who became Australia’s first Catholic saint in 2010?', 'Mary MacKillop', 'Mother Teresa', 'Caroline Chisholm', 'Elizabeth Macarthur'),
+              question('Sir Douglas Mawson is remembered for exploring which continent?', 'Antarctica', 'Europe', 'Asia', 'North America'),
+              question('Fred Hollows was a doctor known for helping people regain which sense?', 'Sight', 'Hearing', 'Smell', 'Touch')
+            ]
+          }
+        ]
+      },
+      {
+        id: 'general',
+        title: 'General Knowledge',
+        quizzes: [{
+          title: 'General Knowledge',
+          questions: [
+            question('What is the traditional Japanese art of paper folding called?', 'Origami', 'Kintsugi', 'Ikebana', 'Bonsai'),
+            question('How many minutes are in an hour and a half?', '90', '60', '75', '100'),
+            question('Which number does the Roman numeral X stand for?', '10', '5', '20', '50'),
+            question('Which chess piece is in danger when a player is in check?', 'King', 'Queen', 'Knight', 'Bishop'),
+            question('In which board game can you buy properties and charge rent?', 'Monopoly', 'Scrabble', 'Cluedo', 'Battleship'),
+            question('Which object has a needle that points towards magnetic north?', 'Compass', 'Stopwatch', 'Thermometer', 'Ruler'),
+            question('Which month comes just before September?', 'August', 'October', 'July', 'November'),
+            question('What sport uses a shuttlecock?', 'Badminton', 'Tennis', 'Table tennis', 'Squash'),
+            question('How many items are in a dozen?', '12', '10', '14', '20'),
+            question('What do we call a book of maps?', 'Atlas', 'Dictionary', 'Thesaurus', 'Almanac')
+          ]
+        }]
+      },
+      {
+        id: 'dictionary',
+        title: 'Dictionary',
+        quizzes: [{
+          title: 'Dictionary',
+          questions: [
+            question('Which word means the same as “enormous”?', 'Huge', 'Tiny', 'Quiet', 'Swift'),
+            question('What does “reluctant” mean?', 'Unwilling or hesitant', 'Very excited', 'Deeply asleep', 'Easy to see'),
+            question('What does the “bi” in “bicycle” refer to?', 'Two wheels', 'One wheel', 'Three wheels', 'Four wheels'),
+            question('Which word means the opposite of “scarce”?', 'Plentiful', 'Rare', 'Costly', 'Fragile'),
+            question('What does “bilingual” mean?', 'Able to use two languages', 'Able to write with either hand', 'Able to play two instruments', 'Able to read very quickly'),
+            question('Which spelling is correct for a place where you can borrow books?', 'Library', 'Libary', 'Librery', 'Liberry'),
+            question('What does “temporary” mean?', 'Lasting for a limited time', 'Lasting forever', 'Made by hand', 'Hard to find'),
+            question('What do we call a word with the opposite meaning to another word?', 'Antonym', 'Synonym', 'Homophone', 'Pronoun'),
+            question('Which word sounds the same as “flower”?', 'Flour', 'Flow', 'Glow', 'Float'),
+            question('What do we call a person who writes poems?', 'Poet', 'Painter', 'Pilot', 'Potter')
+          ]
+        }]
+      },
+      {
+        id: 'entertainment',
+        title: 'Entertainment',
+        quizzes: [{
+          title: 'Entertainment',
+          questions: [
+            question('Which instrument has black and white keys and is usually played with both hands?', 'Piano', 'Violin', 'Trumpet', 'Guitar'),
+            question('In The Wizard of Oz, what is the name of Dorothy’s dog?', 'Toto', 'Fido', 'Skip', 'Spot'),
+            question('Which group recorded Dancing Queen?', 'ABBA', 'The Beatles', 'The Beach Boys', 'Fleetwood Mac'),
+            question('What is the name of the flying nanny played by Julie Andrews?', 'Mary Poppins', 'Maria von Trapp', 'Cinderella', 'Belle'),
+            question('What was the first name of the singer known as the King of Rock and Roll?', 'Elvis', 'Johnny', 'Frank', 'Chuck'),
+            question('What colour is Kermit the Frog?', 'Green', 'Red', 'Blue', 'Purple'),
+            question('Who played the title character in the 1986 film Crocodile Dundee?', 'Paul Hogan', 'Bryan Brown', 'Jack Thompson', 'Michael Caton'),
+            question('Which jazz trumpeter and singer is famous for What a Wonderful World?', 'Louis Armstrong', 'Frank Sinatra', 'Nat King Cole', 'Johnny Cash'),
+            question('In which Australian TV show would you find Alf Stewart?', 'Home and Away', 'Neighbours', 'A Country Practice', 'Blue Heelers'),
+            question('Who played the silent film character known as the Little Tramp?', 'Charlie Chaplin', 'Buster Keaton', 'Stan Laurel', 'Harold Lloyd')
+          ]
+        }]
+      },
+      {
+        id: 'food',
+        title: 'Food & Drink',
+        quizzes: [{
+          title: 'Food & Drink',
+          questions: [
+            question('What is the main ingredient in guacamole?', 'Avocado', 'Tomato', 'Cucumber', 'Capsicum'),
+            question('Which fruit can be dried to make sultanas?', 'Grapes', 'Cherries', 'Apples', 'Peaches'),
+            question('What is the main herb in classic Italian pesto?', 'Basil', 'Mint', 'Coriander', 'Rosemary'),
+            question('Which Australian cake is dipped in chocolate icing and rolled in coconut?', 'Lamington', 'Pavlova', 'Vanilla slice', 'Anzac biscuit'),
+            question('What is the main ingredient in hummus?', 'Chickpeas', 'Lentils', 'Kidney beans', 'Green peas'),
+            question('Which grain is traditionally used to make risotto?', 'Rice', 'Barley', 'Oats', 'Wheat'),
+            question('Which drink is made by steeping leaves in hot water?', 'Tea', 'Coffee', 'Lemonade', 'Soda water'),
+            question('A navel is a variety of which fruit?', 'Orange', 'Grapefruit', 'Lemon', 'Mandarin'),
+            question('Which nut is traditionally used to make marzipan?', 'Almond', 'Peanut', 'Macadamia', 'Hazelnut'),
+            question('Which spread is made from brewer’s yeast extract?', 'Vegemite', 'Honey', 'Peanut butter', 'Marmalade')
+          ]
+        }]
+      },
+      {
+        id: 'geography',
+        title: 'Geography',
+        quizzes: [{
+          title: 'Geography',
+          questions: [
+            question('Which country is home to the city of Kyoto?', 'Japan', 'China', 'Thailand', 'South Korea'),
+            question('What is the capital city of New Zealand?', 'Wellington', 'Auckland', 'Christchurch', 'Dunedin'),
+            question('Which ocean lies between Australia’s east coast and the Americas?', 'Pacific Ocean', 'Indian Ocean', 'Atlantic Ocean', 'Arctic Ocean'),
+            question('Which European city is famous for its canals and gondolas?', 'Venice', 'Rome', 'Paris', 'Vienna'),
+            question('In which country can you find the pyramids of Giza?', 'Egypt', 'Greece', 'Turkey', 'Jordan'),
+            question('Which continent is the Sahara Desert on?', 'Africa', 'Asia', 'Australia', 'South America'),
+            question('Which Australian island state lies south of the mainland?', 'Tasmania', 'Queensland', 'Victoria', 'South Australia'),
+            question('What is the capital city of South Australia?', 'Adelaide', 'Mount Gambier', 'Port Lincoln', 'Whyalla'),
+            question('Which city has the clock tower that contains Big Ben?', 'London', 'Edinburgh', 'Manchester', 'Dublin'),
+            question('Which country is home to the Taj Mahal?', 'India', 'Pakistan', 'Nepal', 'Sri Lanka')
+          ]
+        }]
+      },
+      {
+        id: 'science',
+        title: 'Science & Nature',
+        quizzes: [{
+          title: 'Science & Nature',
+          questions: [
+            question('Which planet is known as the Red Planet?', 'Mars', 'Venus', 'Jupiter', 'Mercury'),
+            question('Which part of a plant usually takes up water from the soil?', 'Roots', 'Flowers', 'Leaves', 'Fruit'),
+            question('What group of mammals includes kangaroos and wombats?', 'Marsupials', 'Primates', 'Rodents', 'Monotremes'),
+            question('What is the largest living animal?', 'Blue whale', 'African elephant', 'Whale shark', 'Sperm whale'),
+            question('At what temperature does water normally freeze?', '0°C', '10°C', '25°C', '100°C'),
+            question('Which gas makes up most of the air around us?', 'Nitrogen', 'Oxygen', 'Helium', 'Carbon dioxide'),
+            question('Which organ pumps blood around the body?', 'Heart', 'Lungs', 'Stomach', 'Liver'),
+            question('What type of animal is a kookaburra?', 'Bird', 'Fish', 'Reptile', 'Mammal'),
+            question('What do bees collect from flowers to make honey?', 'Nectar', 'Pollen', 'Seeds', 'Leaves'),
+            question('What is a young frog called before it grows legs?', 'Tadpole', 'Chick', 'Cub', 'Joey')
+          ]
+        }]
+      }
+    ];
+
+    // Icons and app logic.
+    const icons = {
+      history: '<path d="M3 9l9-5 9 5H3zm2 3v6m5-6v6m4-6v6m5-6v6M3 21h18"/>',
+      general: '<path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 .8-1 1.5-1 2H9c0-.5 0-1.2-1-2z"/>',
+      dictionary: '<path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zm0 0v14"/>',
+      entertainment: '<path d="M9 18V6l11-2v11M9 18c0 1.5-1.6 2.6-3.2 2.6S3 19.7 3 18.5 4.4 16 6 16c1.3 0 3 .5 3 2zm11-3c0 1.5-1.6 2.6-3.2 2.6S14 16.7 14 15.5 15.4 13 17 13c1.3 0 3 .5 3 2z"/>',
+      food: '<path d="M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 3v18m12 0V3c-2 1-4 4-4 8v3h4"/>',
+      geography: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/>',
+      science: '<path d="M12 21v-8m0 3C6 16 3 13 3 8c5 0 9 3 9 8zm0-2c0-6 3-9 9-9 0 6-3 9-9 9z"/>'
+    };
+
+    const byId = (id) => document.getElementById(id);
+    const topicsScreen = byId('topics-screen');
+    const roundsScreen = byId('rounds-screen');
+    const quizScreen = byId('quiz-screen');
+    const resultScreen = byId('result-screen');
+    const screens = [topicsScreen, roundsScreen, quizScreen, resultScreen];
+    const backButton = byId('back-button');
+    const nextButton = byId('next-button');
+    const answers = byId('answers');
+    const feedback = byId('feedback');
+
+    let currentTopic;
+    let currentQuiz;
+    let questionIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    function makeTile(topic, title, detail, onClick) {
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'tile ' + topic.id;
+
+      const icon = document.createElement('span');
+      icon.className = 'tile-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">${icons[topic.id]}</svg>`;
+
+      const text = document.createElement('span');
+      const name = document.createElement('span');
+      name.className = 'tile-title';
+      name.textContent = title;
+      const subtitle = document.createElement('span');
+      subtitle.className = 'tile-detail';
+      subtitle.textContent = detail;
+      text.append(name, subtitle);
+
+      const arrow = document.createElement('span');
+      arrow.className = 'tile-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '›';
+      tile.append(icon, text, arrow);
+      tile.addEventListener('click', onClick);
+      return tile;
+    }
+
+    function showScreen(screen, headingId, backLabel = '') {
+      screens.forEach((section) => { section.hidden = section !== screen; });
+      backButton.hidden = !backLabel;
+      backButton.textContent = backLabel ? '← ' + backLabel : '';
+      window.scrollTo(0, 0);
+      byId(headingId).focus({ preventScroll: true });
+    }
+
+    function showTopics() {
+      showScreen(topicsScreen, 'topics-heading');
+    }
+
+    function showRounds(topic) {
+      currentTopic = topic;
+      byId('rounds-topic').textContent = topic.title;
+      byId('rounds-heading').textContent = topic.description;
+      const grid = byId('round-grid');
+      grid.textContent = '';
+      topic.quizzes.forEach((quiz) => {
+        const detail = `${quiz.questions.length} questions`;
+        grid.append(makeTile(topic, quiz.title, detail, () => startQuiz(topic, quiz)));
+      });
+      showScreen(roundsScreen, 'rounds-heading', 'All topics');
+    }
+
+    function returnToQuizzes() {
+      if (currentTopic.quizzes.length > 1) {
+        showRounds(currentTopic);
+      } else {
+        showTopics();
+      }
+    }
+
+    function startQuiz(topic, quiz) {
+      currentTopic = topic;
+      currentQuiz = quiz;
+      questionIndex = 0;
+      score = 0;
+      showQuestion();
+    }
+
+    function shuffleChoices(choices) {
+      const shuffled = choices.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const randomIndex = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function showQuestion() {
+      const currentQuestion = currentQuiz.questions[questionIndex];
+      const total = currentQuiz.questions.length;
+      answered = false;
+      byId('quiz-title').textContent = currentQuiz.title;
+      byId('question-number').textContent = `Question ${questionIndex + 1} of ${total}`;
+      byId('quiz-score').textContent = `Score ${score}`;
+      byId('quiz-progress').max = total;
+      byId('quiz-progress').value = questionIndex + 1;
+      byId('question-text').textContent = currentQuestion.prompt;
+      feedback.textContent = '';
+      delete feedback.dataset.result;
+      nextButton.hidden = true;
+      nextButton.textContent = questionIndex + 1 === total ? 'See results' : 'Next question';
+      answers.textContent = '';
+
+      shuffleChoices(currentQuestion.choices).forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'answer';
+        button.dataset.choice = choice;
+        const letter = document.createElement('span');
+        letter.className = 'answer-letter';
+        letter.textContent = 'ABCD'[index];
+        letter.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.textContent = choice;
+        const mark = document.createElement('span');
+        mark.className = 'answer-mark';
+        mark.setAttribute('aria-hidden', 'true');
+        button.append(letter, text, mark);
+        button.addEventListener('click', () => checkAnswer(currentQuestion.answer, button));
+        answers.append(button);
+      });
+
+      const backLabel = currentTopic.quizzes.length > 1 ? `${currentTopic.title} quizzes` : 'All topics';
+      showScreen(quizScreen, 'question-text', backLabel);
+    }
+
+    function checkAnswer(correctAnswer, selectedButton) {
+      if (answered) return;
+      answered = true;
+      const isCorrect = selectedButton.dataset.choice === correctAnswer;
+
+      answers.querySelectorAll('.answer').forEach((button) => {
+        button.disabled = true;
+        const mark = button.querySelector('.answer-mark');
+        if (button.dataset.choice === correctAnswer) {
+          button.dataset.result = 'correct';
+          mark.textContent = '✓';
+        } else if (button === selectedButton) {
+          button.dataset.result = 'incorrect';
+          mark.textContent = '×';
+        }
+      });
+
+      if (isCorrect) {
+        score++;
+        feedback.dataset.result = 'correct';
+      }
+      byId('quiz-score').textContent = `Score ${score}`;
+      feedback.textContent = isCorrect ? 'Correct!' : `Good try. The answer is ${correctAnswer}.`;
+      nextButton.hidden = false;
+      nextButton.focus();
+    }
+
+    function showResults() {
+      byId('result-title').textContent = currentQuiz.title;
+      byId('result-score').textContent = `You answered ${score} of ${currentQuiz.questions.length} correctly.`;
+      showScreen(resultScreen, 'result-heading');
+    }
+
+    nextButton.addEventListener('click', () => {
+      if (!answered || quizScreen.hidden) return;
+      questionIndex++;
+      if (questionIndex < currentQuiz.questions.length) {
+        showQuestion();
+      } else {
+        showResults();
+      }
+    });
+
+    backButton.addEventListener('click', () => {
+      if (roundsScreen.hidden) {
+        returnToQuizzes();
+      } else {
+        showTopics();
+      }
+    });
+    byId('another-button').addEventListener('click', returnToQuizzes);
+    byId('replay-button').addEventListener('click', () => startQuiz(currentTopic, currentQuiz));
+
+    const topicGrid = byId('topic-grid');
+    topics.forEach((topic) => {
+      const quiz = topic.quizzes[0];
+      const hasSeveralQuizzes = topic.quizzes.length > 1;
+      const detail = hasSeveralQuizzes
+        ? `${topic.description} · ${topic.quizzes.length} quizzes`
+        : `${quiz.questions.length} questions`;
+      topicGrid.append(makeTile(topic, topic.title, detail, () => {
+        if (hasSeveralQuizzes) {
+          showRounds(topic);
+        } else {
+          startQuiz(topic, quiz);
+        }
+      }));
+    });
+  </script>
+</body>
+</html>
